@@ -3,6 +3,7 @@ module.exports = {
     PDF_DIRS: {
         DEFAULT: path.resolve(__dirname, '../../pdfs'),
     },
+    TAPULA_PATH: 'tabula-1.0.4.jar',
     MYSQL: {
         host     : 'localhost',
         user: "otwoodev",

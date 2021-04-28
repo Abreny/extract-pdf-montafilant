@@ -8,7 +8,8 @@
     "fs.realpath": "^1.0.0",
     "mysql": "^2.18.1",
     "pdf-parse": "^1.1.1",
-    "pdf2html": "^2.5.2"
+    "pdf2html": "^2.5.2",
+    "tabula-js": "^1.0.1"
   },
   "scripts": {
     "app": "node src/app/main.js",
