@@ -182,6 +182,52 @@ const extractProductionData = (index, data) => {
     return results;
 }
 
+const extractExpertiseDetails = (index, data) => {
+    const results = {
+        TITLE: '',
+        DATA: []
+    };
+    const EXPERTISE_DETAILS = /^D.[0-9]\s*(.*)$/;
+    const BREAK = /(^D\s*\.\s*[0-9]+)|(^E\s*\.\s*[0-9]*)/;
+    const LINE_HEADER = /^\s*([0-9]+)\s*([A-Z]+)/;
+    const PAGE_BREAK = /^page\s*[0-9]+/;
+    const QUOTES = /"/g;
+    let matches = data[index].match(EXPERTISE_DETAILS);
+    if (matches) {
+        results.TITLE = matches[1];
+        for(let i = index + 1; i < data.length; i++) {
+            let text = data[i].replace(QUOTES, '');
+            if (BREAK.test(text)) {
+                break;
+            }
+            matches = text.match(LINE_HEADER);
+            if (matches) {
+                const elem = {};
+                elem.ID = matches[1];
+                elem.CRITICITY = matches[2];
+                elem.TEXT = text.replace(LINE_HEADER, '').trim();
+                while(++i < data.length) {
+                    text = data[i].replace(QUOTES, '');
+                    if (PAGE_BREAK.test(text) || LINE_HEADER.test(text)) {
+                        i--;
+                        break;
+                    }
+                    if (/^\s*-\s*/.test(text)) {
+                        elem.TEXT = `${elem.TEXT}\n${text}`
+                    } else {
+                        elem.TEXT = `${elem.TEXT} ${text}`;
+                    }
+                }
+                results.DATA.push(elem);
+            }
+        }
+    }
+    if (results.DATA.length < 1) {
+        return false;
+    }
+    return results;
+};
+
 const getPath = (filename) => {
     return path.resolve(getDirs(), filename);
 }
@@ -192,13 +238,21 @@ const getPdfData = (filename, stdout) => {
     const lines = stdout.split(/(?:\r)*\n/);
     const PDF_DATA = {
         FILENAME: path.basename(filename),
-        INFO_TURBINE: extractInfoTurbine(lines)
+        INFO_TURBINE: extractInfoTurbine(lines),
+        EXPERTISE_DETAILS: []
     };
     const PRODUCTION_DATA_PATTERN = /[A-Z].[0-9]\s*(Production\s*data|Donn[ée]es\s*de\s*production)\s*$/;
+    const EXPERTISE_DETAILS = /^D\s*.\s*[0-9]+/;
     for(let i = 0; i < lines.length; i++) {
         const text = lines[i];
         if (PRODUCTION_DATA_PATTERN.test(text)) {
             PDF_DATA.PRODUCTION_DATA = extractProductionData(i, lines);
+        }
+        if (EXPERTISE_DETAILS.test(text)) {
+            const expertiseDetails = extractExpertiseDetails(i, lines);
+            if (expertiseDetails) {
+                PDF_DATA.EXPERTISE_DETAILS.push(expertiseDetails);
+            }
         }
     }
     return PDF_DATA;
