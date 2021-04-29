@@ -187,7 +187,7 @@ const extractExpertiseDetails = (index, data) => {
         TITLE: '',
         DATA: []
     };
-    const EXPERTISE_DETAILS = /^D.[0-9]\s*(.*)$/;
+    const EXPERTISE_DETAILS = /^D.[0-9]+\s*(.*)$/;
     const BREAK = /(^D\s*\.\s*[0-9]+)|(^E\s*\.\s*[0-9]*)/;
     const LINE_HEADER = /^\s*([0-9]+)\s*([A-Z]+)/;
     const PAGE_BREAK = /^page\s*[0-9]+/;
@@ -228,6 +228,66 @@ const extractExpertiseDetails = (index, data) => {
     return results;
 };
 
+const extractConclusion = (index, data) => {
+    const results = {
+        TITLE: '',
+        DATA: []
+    };
+    const CONSLUSION_PATTERN = /^E.[0-9]+\s*(.*)$/;
+    const BREAK = /(^E\s*\.\s*[0-9]+)|(^F\s*\.\s*[0-9]*)/;
+    const PAGE_BREAK = /^page\s*[0-9]+/;
+    const PAGE_END = /^Edit\s*[0-9]+/;
+    const QUOTES = /"/g;
+    const DOT = /(.*):\s*$/;
+    let matches = data[index].match(CONSLUSION_PATTERN);
+    let conclusionId = 1;
+    if (matches) {
+        results.TITLE = matches[1];
+        for(let i = index + 1; i < data.length; i++) {
+            let text = data[i].replace(QUOTES, '');
+            if (BREAK.test(text)) {
+                break;
+            }
+            matches = text.match(DOT);
+            if (matches) {
+                const elem = {};
+                elem.ID = `${conclusionId}-C`;
+                elem.TITLE = matches[1].trim();
+                elem.TEXT = '';
+                elem.COMMENT = '';
+                next_conclusion: while(++i < data.length) {
+                    text = data[i].replace(QUOTES, '');
+                    if (PAGE_BREAK.test(text)) {
+                        while(++i < data.length) {
+                            const lineText = data[i].replace(QUOTES, '');
+                            if (PAGE_END.test(lineText)) {
+                                continue next_conclusion;
+                            }
+                        }
+                    }
+                    if (DOT.test(text) || BREAK.test(text)) {
+                        i--;
+                        break;
+                    }
+                    if (/^\s*-\s*/.test(text)) {
+                        elem.COMMENT = `${elem.COMMENT}\n${text}`
+                    } else {
+                        elem.TEXT = `${elem.TEXT} ${text}`;
+                    }
+                }
+                elem.COMMENT = elem.COMMENT.trim();
+                elem.TEXT = elem.TEXT.trim();
+                results.DATA.push(elem);
+                conclusionId++;
+            }
+        }
+    }
+    if (results.DATA.length < 1) {
+        return false;
+    }
+    return results;
+};
+
 const getPath = (filename) => {
     return path.resolve(getDirs(), filename);
 }
@@ -239,10 +299,12 @@ const getPdfData = (filename, stdout) => {
     const PDF_DATA = {
         FILENAME: path.basename(filename),
         INFO_TURBINE: extractInfoTurbine(lines),
-        EXPERTISE_DETAILS: []
+        EXPERTISE_DETAILS: [],
+        CONCLUSION: []
     };
     const PRODUCTION_DATA_PATTERN = /[A-Z].[0-9]\s*(Production\s*data|Donn[ée]es\s*de\s*production)\s*$/;
     const EXPERTISE_DETAILS = /^D\s*.\s*[0-9]+/;
+    const CONCLUSION_DETAILS = /^E\s*.\s*[0-9]+\s*Conclusion/;
     for(let i = 0; i < lines.length; i++) {
         const text = lines[i];
         if (PRODUCTION_DATA_PATTERN.test(text)) {
@@ -252,6 +314,12 @@ const getPdfData = (filename, stdout) => {
             const expertiseDetails = extractExpertiseDetails(i, lines);
             if (expertiseDetails) {
                 PDF_DATA.EXPERTISE_DETAILS.push(expertiseDetails);
+            }
+        }
+        if (CONCLUSION_DETAILS.test(text)) {
+            const conclusion = extractConclusion(i, lines);
+            if (conclusion) {
+                PDF_DATA.CONCLUSION.push(conclusion);
             }
         }
     }
