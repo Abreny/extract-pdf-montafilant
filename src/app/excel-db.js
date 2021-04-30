@@ -12,7 +12,7 @@ for (const sheet in config.EXCELS.SHEETS) {
     }
 }
 
-wb.xlsx.writeFile(config.EXCELS.FILENAME).then((data) => {
+wb.xlsx.writeFile(config.EXCELS.FILENAME, {encoding: 'UTF-8'}).then((data) => {
     console.log('**** EXCEL CREATED *****');
 }).catch(e => {
     console.log('****** CAN NOT CREATE THE EXCEL *****');

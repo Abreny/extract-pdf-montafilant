@@ -371,28 +371,33 @@ const getPdfData = (isTurbine, filename, stdout) => {
         PRODUCTION_DATA: extractProductionData(0, ['', 'B.1']),
         EXPERTISE_DETAILS: [],
         CONCLUSION: [],
-        COMPONENT: []
+        COMPONENT: [],
+        IS_SCAN: true
     };
     const PRODUCTION_DATA_PATTERN = /[A-Z].[0-9]\s*(Production\s*data|Donn[ée]es\s*de\s*production)\s*$/;
     const EXPERTISE_DETAILS = /^D\s*.\s*[0-9]+/;
     const CONCLUSION_DETAILS = /^E\s*.\s*[0-9]+\s*Conclusion/;
     const MAIN_COMPONENTS = /^B.[2-3]\s*/;
+    
     for(let i = 0; i < lines.length; i++) {
         const text = lines[i];
         if (isTurbine) {
             if (PRODUCTION_DATA_PATTERN.test(text)) {
                 PDF_DATA.PRODUCTION_DATA = extractProductionData(i, lines);
+                PDF_DATA.IS_SCAN = false;
             }
             if (EXPERTISE_DETAILS.test(text)) {
                 const expertiseDetails = extractExpertiseDetails(i, lines);
                 if (expertiseDetails) {
                     PDF_DATA.EXPERTISE_DETAILS.push(expertiseDetails);
+                    PDF_DATA.IS_SCAN = false;
                 }
             }
             if (CONCLUSION_DETAILS.test(text)) {
                 const conclusion = extractConclusion(i, lines);
                 if (conclusion) {
                     PDF_DATA.CONCLUSION.push(conclusion);
+                    PDF_DATA.IS_SCAN = false;
                 }
             }
         } else if (MAIN_COMPONENTS.test(text.replace(/,/g, '').trim())) {
@@ -429,8 +434,11 @@ const main = async () => {
             const data =  await tabulaHandler('turbine', getPath(file));
             const data2 = await tabulaHandler('component', getPath(file));
             data.COMPONENT = data2.COMPONENT;
-            await dataWriter.save(data);
-            console.log(JSON.stringify(data, null, 2));
+            if (data.IS_SCAN) {
+                console.log(`${file}: FORMAT NON RECONNU`);
+            } else {
+                await dataWriter.save(data);
+            }
         }
         setTimeout(() => {}, 2000);
     }

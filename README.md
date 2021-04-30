@@ -5,7 +5,7 @@ First:
     cd extract-pdf-montafilant
     npm install --save
 
-Next, put the pdfs into **pdfs**. And you must configure the config for the database in **src/app/config.js**.
+Next, put the pdfs into **pdfs**.
 
 Finally, do these:
 

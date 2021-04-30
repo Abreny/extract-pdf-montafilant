@@ -97,6 +97,8 @@ module.exports = {
         saveComponent(data);
         saveRemark(data);
         saveConclusion(data);
-        await wb.xlsx.writeFile(config.EXCELS.FILENAME);
+        await wb.xlsx.writeFile(config.EXCELS.FILENAME, {
+            encoding: 'UTF-8'
+        });
     }
 }
