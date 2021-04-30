@@ -10,4 +10,5 @@ Next, put the pdfs into **pdfs**. And you must configure the config for the data
 Finally, do these:
 
     npm run rename-file
+    npm run init-xls
     npm run app

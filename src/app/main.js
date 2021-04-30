@@ -1,11 +1,10 @@
-const cheerio = require("cheerio");
 const fs = require("fs");
 const path = require("path");
 const tabula = require('tabula-js');
+const { exec } = require('child_process');
 
 const config = require("./config");
-const pdfToHtml = require("./pdf-to-html");
-const { exec } = require('child_process');
+const dataWriter = require('./data-writer');
 
 const getDirs = () => {
     return config.PDF_DIRS.DEFAULT;
@@ -58,7 +57,7 @@ const extractInfoTurbine = (data) => {
             field: 'MACHINE_TYPE'
         },
         {
-            pattern: /(Serial\s+Nu\s*mber)|(Wind\s+farm\s+and\s+no.\s+In\s+farm)\s*:/i,
+            pattern: /(Serial\s+Nu\s*mber|Wind\s+farm\s+and\s+no.\s+In\s+farm)\s*:/i,
             field: 'NUM_SERIE'
         },
         {
@@ -369,6 +368,7 @@ const getPdfData = (isTurbine, filename, stdout) => {
     const PDF_DATA = {
         FILENAME: path.basename(filename),
         INFO_TURBINE: isTurbine ? extractInfoTurbine(lines) : {},
+        PRODUCTION_DATA: extractProductionData(0, ['', 'B.1']),
         EXPERTISE_DETAILS: [],
         CONCLUSION: [],
         COMPONENT: []
@@ -405,18 +405,17 @@ const getPdfData = (isTurbine, filename, stdout) => {
     return PDF_DATA;
 }
 
-const tabulaHandler = (filename) => {
+const tabulaHandler = (cmd, filename) => {
     return new Promise((resolve, reject) => {
-        const scriptName = process.argv[2] || 'turbine'
         const cmds = {
             turbine: `java -jar "${config.TAPULA_PATH}" --pages all -c 10000 "${filename}"`,
             component: `java -jar "${config.TAPULA_PATH}" --pages all --columns 200,320,440,1000 "${filename}"`
         };
-        exec(cmds[scriptName], (err, stdout, stderr) => {
+        exec(cmds[cmd], (err, stdout, stderr) => {
             if (err) {
               return reject(err);
             }
-            return resolve(getPdfData(scriptName == 'turbine', filename, stdout));
+            return resolve(getPdfData(cmd == 'turbine', filename, stdout));
         });
     });
 }
@@ -427,8 +426,11 @@ const main = async () => {
         const file = files[i];
         if (file.match(EXTENSION)) {
             console.log(`****** ${file} ******`);
-            const data =  await tabulaHandler(getPath(file));
-            // console.log(JSON.stringify(data, null, 2));
+            const data =  await tabulaHandler('turbine', getPath(file));
+            const data2 = await tabulaHandler('component', getPath(file));
+            data.COMPONENT = data2.COMPONENT;
+            await dataWriter.save(data);
+            console.log(JSON.stringify(data, null, 2));
         }
         setTimeout(() => {}, 2000);
     }

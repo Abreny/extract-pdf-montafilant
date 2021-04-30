@@ -4,18 +4,14 @@
   "description": "PDF Extraction",
   "main": "index.js",
   "dependencies": {
-    "cheerio": "^1.0.0-rc.3",
     "exceljs": "^4.2.1",
     "fs.realpath": "^1.0.0",
-    "mysql": "^2.18.1",
-    "pdf-parse": "^1.1.1",
-    "pdf2html": "^2.5.2",
     "tabula-js": "^1.0.1"
   },
   "scripts": {
     "app": "node src/app/main.js",
     "rename-file": "node src/app/rename-file.js",
-    "test-xls": "node src/app/excel-db.js"
+    "init-xls": "node src/app/excel-db.js"
   },
   "keywords": [],
   "author": "",
