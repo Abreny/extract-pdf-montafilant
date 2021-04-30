@@ -187,8 +187,8 @@ const extractExpertiseDetails = (index, data) => {
         TITLE: '',
         DATA: []
     };
-    const EXPERTISE_DETAILS = /^D.[0-9]+\s*(.*)$/;
-    const BREAK = /(^D\s*\.\s*[0-9]+)|(^E\s*\.\s*[0-9]*)/;
+    const EXPERTISE_DETAILS = /^D.[0-9]*\s*(.*)$/;
+    const BREAK = /(^D\s*\.\s*[0-9]*)|(^E\s*\.\s*[0-9]*)/;
     const LINE_HEADER = /^\s*([0-9]+)\s*([A-Z]+)/;
     const PAGE_BREAK = /^page\s*[0-9]+/;
     const QUOTES = /"/g;
@@ -233,8 +233,8 @@ const extractConclusion = (index, data) => {
         TITLE: '',
         DATA: []
     };
-    const CONSLUSION_PATTERN = /^E.[0-9]+\s*(.*)$/;
-    const BREAK = /(^E\s*\.\s*[0-9]+)|(^F\s*\.\s*[0-9]*)/;
+    const CONSLUSION_PATTERN = /^E.[0-9]*\s*(.*)$/;
+    const BREAK = /(^E\s*\.\s*[0-9]*)|(^F\s*\.\s*[0-9]*)/;
     const PAGE_BREAK = /^page\s*[0-9]+/;
     const PAGE_END = /^Edit\s*[0-9]+/;
     const QUOTES = /"/g;
@@ -287,6 +287,76 @@ const extractConclusion = (index, data) => {
     }
     return results;
 };
+const extractComponents = (index, data) => {
+    const results = {
+        TITLE: '',
+        DATA: []
+    };
+    const CONSLUSION_PATTERN = /^B.[0-9]+\s*(.*)$/;
+    const BREAK = /(^C\s*\.\s*[0-9]*)|(^B\s*\.\s*[0-9]*)/;
+    const PAGE_BREAK = /^page\s*[0-9]+/;
+    let matches = data[index].match(CONSLUSION_PATTERN);
+    const extractLine = (line) => {
+        const chars = line.split('');
+        let curr = [];
+        let hasQuote = false;
+        let lineData = {
+            code: 2,
+            data: []
+        };
+        for(let i = 0; i < chars.length; i++) {
+            if (chars[i] == '"') {
+                hasQuote = !hasQuote;
+            } else if (!hasQuote && chars[i] == ',') {
+                const col = curr.join('').trim();
+                if (col.toLowerCase() == 'component' || col.toLowerCase() == 'composant') {
+                    lineData.code = 0;
+                    return lineData;
+                }
+                if (PAGE_BREAK.test(col) || BREAK.test(col)) {
+                    lineData.code = -1;
+                    return lineData;
+                }
+                if (col.length == 0) {
+                    lineData.code = 1;
+                }
+                lineData.data.push(col);
+                curr = [];
+            } else {
+                curr.push(chars[i]);
+            }
+        }
+        const lastCol = curr.join('').trim();
+        if (PAGE_BREAK.test(lastCol) || BREAK.test(lastCol)) {
+            lineData.code = -1;
+            return lineData;
+        }
+        lineData.data.push(lastCol);
+        return lineData;
+    };
+    if (matches) {
+        results.TITLE = matches[1].replace(/,/g, '').trim();
+        let len = 0;
+        for(let i = index + 1; i < data.length; i++) {
+            const lineData = extractLine(data[i]);
+            if (lineData.code == -1) {
+                break;
+            }
+            if (lineData.code == 2) {
+                results.DATA[len++] = lineData.data;
+            } else if (lineData.code == 1 && len != 0) {
+                for(let line_i in lineData.data) {
+                    results.DATA[len - 1][line_i] = `${results.DATA[len - 1][line_i]} ${lineData.data[line_i]}`;
+                    results.DATA[len - 1][line_i] = results.DATA[len - 1][line_i].trim();
+                }
+            }
+        }
+    }
+    if (results.DATA.length < 1) {
+        return false;
+    }
+    return results;
+};
 
 const getPath = (filename) => {
     return path.resolve(getDirs(), filename);
@@ -294,32 +364,41 @@ const getPath = (filename) => {
 
 const files = fs.readdirSync(getDirs());
 
-const getPdfData = (filename, stdout) => {
+const getPdfData = (isTurbine, filename, stdout) => {
     const lines = stdout.split(/(?:\r)*\n/);
     const PDF_DATA = {
         FILENAME: path.basename(filename),
-        INFO_TURBINE: extractInfoTurbine(lines),
+        INFO_TURBINE: isTurbine ? extractInfoTurbine(lines) : {},
         EXPERTISE_DETAILS: [],
-        CONCLUSION: []
+        CONCLUSION: [],
+        COMPONENT: []
     };
     const PRODUCTION_DATA_PATTERN = /[A-Z].[0-9]\s*(Production\s*data|Donn[ée]es\s*de\s*production)\s*$/;
     const EXPERTISE_DETAILS = /^D\s*.\s*[0-9]+/;
     const CONCLUSION_DETAILS = /^E\s*.\s*[0-9]+\s*Conclusion/;
+    const MAIN_COMPONENTS = /^B.[2-3]\s*/;
     for(let i = 0; i < lines.length; i++) {
         const text = lines[i];
-        if (PRODUCTION_DATA_PATTERN.test(text)) {
-            PDF_DATA.PRODUCTION_DATA = extractProductionData(i, lines);
-        }
-        if (EXPERTISE_DETAILS.test(text)) {
-            const expertiseDetails = extractExpertiseDetails(i, lines);
-            if (expertiseDetails) {
-                PDF_DATA.EXPERTISE_DETAILS.push(expertiseDetails);
+        if (isTurbine) {
+            if (PRODUCTION_DATA_PATTERN.test(text)) {
+                PDF_DATA.PRODUCTION_DATA = extractProductionData(i, lines);
             }
-        }
-        if (CONCLUSION_DETAILS.test(text)) {
-            const conclusion = extractConclusion(i, lines);
-            if (conclusion) {
-                PDF_DATA.CONCLUSION.push(conclusion);
+            if (EXPERTISE_DETAILS.test(text)) {
+                const expertiseDetails = extractExpertiseDetails(i, lines);
+                if (expertiseDetails) {
+                    PDF_DATA.EXPERTISE_DETAILS.push(expertiseDetails);
+                }
+            }
+            if (CONCLUSION_DETAILS.test(text)) {
+                const conclusion = extractConclusion(i, lines);
+                if (conclusion) {
+                    PDF_DATA.CONCLUSION.push(conclusion);
+                }
+            }
+        } else if (MAIN_COMPONENTS.test(text.replace(/,/g, '').trim())) {
+            const components = extractComponents(i, lines);
+            if (components) {
+                PDF_DATA.COMPONENT.push(components);
             }
         }
     }
@@ -328,12 +407,16 @@ const getPdfData = (filename, stdout) => {
 
 const tabulaHandler = (filename) => {
     return new Promise((resolve, reject) => {
-        const cmd = `java -jar "${config.TAPULA_PATH}" --pages all -c 10000 "${filename}"`
-        exec(cmd, (err, stdout, stderr) => {
+        const scriptName = process.argv[2] || 'turbine'
+        const cmds = {
+            turbine: `java -jar "${config.TAPULA_PATH}" --pages all -c 10000 "${filename}"`,
+            component: `java -jar "${config.TAPULA_PATH}" --pages all --columns 200,320,440,1000 "${filename}"`
+        };
+        exec(cmds[scriptName], (err, stdout, stderr) => {
             if (err) {
               return reject(err);
             }
-            return resolve(getPdfData(filename, stdout));
+            return resolve(getPdfData(scriptName == 'turbine', filename, stdout));
         });
     });
 }
