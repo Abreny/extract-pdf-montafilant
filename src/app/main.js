@@ -193,7 +193,7 @@ const extractExpertiseDetails = (index, data) => {
     };
     const EXPERTISE_DETAILS = /^D.[0-9]*\s*(.*)$/;
     const BREAK = /(^D\s*\.\s*[0-9]*)|(^E\s*\.\s*[0-9]*)/;
-    const LINE_HEADER = /^\s*([0-9]+)\s*([A-Z]+)/;
+    const LINE_HEADER = /^\s*([0-9]+)\s*(I|E|V|P|PP|PPP)/;
     const PAGE_BREAK = /^page\s*[0-9]+/;
     const QUOTES = /"/g;
     let matches = data[index].match(EXPERTISE_DETAILS);
