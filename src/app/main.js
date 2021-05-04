@@ -118,7 +118,7 @@ const extractInfoTurbine = (data) => {
     }
     const series = results.NUM_SERIE.replace(/"/g, '').trim().split(',');
     if (series.length > 1) {
-        series.pop();
+        series.shift();
     }
     results.NUM_SERIE = series.join('');
     return results;
@@ -194,7 +194,7 @@ const extractExpertiseDetails = (index, data) => {
     const EXPERTISE_DETAILS = /^D.[0-9]*\s*(.*)$/;
     const BREAK = /(^D\s*\.\s*[0-9]*)|(^E\s*\.\s*[0-9]*)/;
     const LINE_HEADER = /^\s*([0-9]+)\s*(I|E|V|P|PP|PPP)/;
-    const PAGE_BREAK = /^page\s*[0-9]+/;
+    const PAGE_BREAK = /^page\s*[0-9]+|page\s*[0-9]+$/i;
     const QUOTES = /"/g;
     let matches = data[index].match(EXPERTISE_DETAILS);
     if (matches) {
@@ -242,8 +242,8 @@ const extractConclusion = (index, data) => {
     };
     const CONSLUSION_PATTERN = /^E.[0-9]*\s*(.*)$/;
     const BREAK = /(^E\s*\.\s*[0-9]*)|(^F\s*\.\s*[0-9]*)/;
-    const PAGE_BREAK = /^page\s*[0-9]+/;
-    const PAGE_END = /^Edit\s*[0-9]+/;
+    const PAGE_BREAK = /^page\s*[0-9]+|page\s*[0-9]+$/i;
+    const PAGE_END = /^Edit\s*[0-9]+/i;
     const QUOTES = /"/g;
     const DOT = /(.*):\s*$/;
     let matches = data[index].match(CONSLUSION_PATTERN);
@@ -301,7 +301,7 @@ const extractComponents = (index, data) => {
     };
     const CONSLUSION_PATTERN = /^B.[0-9]+\s*(.*)$/;
     const BREAK = /(^C\s*\.\s*[0-9]*)|(^B\s*\.\s*[0-9]*)/;
-    const PAGE_BREAK = /^page\s*[0-9]+/;
+    const PAGE_BREAK = /^page\s*[0-9]+|page\s*[0-9]+$/i;
     let matches = data[index].match(CONSLUSION_PATTERN);
     const extractLine = (line) => {
         const chars = line.split('');
