@@ -116,6 +116,11 @@ const extractInfoTurbine = (data) => {
             }
         }
     }
+    const series = results.NUM_SERIE.replace(/"/g, '').trim().split(',');
+    if (series.length > 1) {
+        series.pop();
+    }
+    results.NUM_SERIE = series.join('');
     return results;
 }
 
@@ -205,6 +210,7 @@ const extractExpertiseDetails = (index, data) => {
                 elem.ID = matches[1];
                 elem.CRITICITY = matches[2];
                 elem.TEXT = text.replace(LINE_HEADER, '').trim();
+                elem.COMMENT = '';
                 while(++i < data.length) {
                     text = data[i].replace(QUOTES, '');
                     if (PAGE_BREAK.test(text) || LINE_HEADER.test(text)) {
@@ -212,11 +218,13 @@ const extractExpertiseDetails = (index, data) => {
                         break;
                     }
                     if (/^\s*-\s*/.test(text)) {
-                        elem.TEXT = `${elem.TEXT}\n${text}`
+                        elem.COMMENT = `${elem.COMMENT}\n${text}`;
                     } else {
                         elem.TEXT = `${elem.TEXT} ${text}`;
                     }
                 }
+                elem.COMMENT = elem.COMMENT.trim();
+                elem.TEXT = elem.TEXT.trim();
                 results.DATA.push(elem);
             }
         }

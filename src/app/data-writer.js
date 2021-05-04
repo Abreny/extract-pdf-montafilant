@@ -65,7 +65,7 @@ const saveRemark = (data) => {
                 elems.TITLE,
                 rows.CRITICITY,
                 rows.TEXT,
-                '',
+                rows.COMMENT,
                 data.INFO_TURBINE.REFERENCE
             ]);
         }
