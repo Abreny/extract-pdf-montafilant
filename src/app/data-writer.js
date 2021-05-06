@@ -49,7 +49,7 @@ const saveComponent = (data) => {
                 rows[1],
                 rows[2],
                 rows[3],
-                data.INFO_TURBINE.REFERENCE
+                `${data.INFO_TURBINE.REPORT_NAME}, ${data.INFO_TURBINE.DATE_OF_EXPERTISE}`
             ]);
         }
     }
@@ -66,7 +66,7 @@ const saveRemark = (data) => {
                 rows.CRITICITY,
                 rows.TEXT,
                 rows.COMMENT,
-                data.INFO_TURBINE.REFERENCE
+                `${data.INFO_TURBINE.REPORT_NAME}, ${data.INFO_TURBINE.DATE_OF_EXPERTISE}`
             ]);
         }
     }
@@ -82,7 +82,7 @@ const saveConclusion = (data) => {
                 rows.TITLE,
                 rows.TEXT,
                 rows.COMMENT,
-                data.INFO_TURBINE.REFERENCE
+                `${data.INFO_TURBINE.REPORT_NAME}, ${data.INFO_TURBINE.DATE_OF_EXPERTISE}`
             ]);
         }
     }
