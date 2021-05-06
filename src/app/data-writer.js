@@ -20,7 +20,7 @@ const saveTurbine = (data) => {
 const saveExpertise = (data) => {
     const ws = wb.getWorksheet(config.EXCELS.TABLE.EXPERTISE);
     ws.addRow([
-        data.INFO_TURBINE.REFERENCE,
+        `${data.INFO_TURBINE.REPORT_NAME}, ${data.INFO_TURBINE.DATE_OF_EXPERTISE}`,
         data.INFO_TURBINE.NUM_SERIE,
         data.INFO_TURBINE.OBJECT,
         data.INFO_TURBINE.SCOPE,

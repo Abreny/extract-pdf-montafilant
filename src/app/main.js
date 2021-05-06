@@ -85,7 +85,7 @@ const extractInfoTurbine = (data) => {
             field: 'CUSTOMER'
         },
         {
-            pattern: /(Report\s*name:\s*:)|(Nom\s*du\s*rapport\s*:)/i,
+            pattern: /(Report\s*name\s*:)|(Nom\s*du\s*rapport\s*:)/i,
             field: 'REPORT_NAME'
         },
         {
@@ -113,6 +113,7 @@ const extractInfoTurbine = (data) => {
             const matches = pText.match(pattern.pattern);
             if (matches && !results[pattern.field]) {
                 results[pattern.field] = pText.replace(pattern.pattern, '').trim();
+                if (pattern.field == 'REPORT_NAME') console.log('REPORT_NAME', results[pattern.field], pText.replace(pattern.pattern, '').trim())
             }
         }
     }
@@ -421,8 +422,8 @@ const getPdfData = (isTurbine, filename, stdout) => {
 const tabulaHandler = (cmd, filename) => {
     return new Promise((resolve, reject) => {
         const cmds = {
-            turbine: `java -jar "${config.TAPULA_PATH}" --pages all -c 10000 "${filename}"`,
-            component: `java -jar "${config.TAPULA_PATH}" --pages all --columns 200,320,440,1000 "${filename}"`
+            turbine: `java -Dfile.encoding=utf-8 -Xms256M -Xmx1024M -jar "${config.TAPULA_PATH}" --pages all -c 10000 "${filename}"`,
+            component: `java -Dfile.encoding=utf-8 -Xms256M -Xmx1024M -jar "${config.TAPULA_PATH}" --pages all --columns 200,320,440,1000 "${filename}"`
         };
         exec(cmds[cmd], (err, stdout, stderr) => {
             if (err) {
