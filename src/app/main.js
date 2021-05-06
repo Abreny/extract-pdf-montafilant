@@ -73,23 +73,23 @@ const extractInfoTurbine = (data) => {
             field: 'DATE_VALIDATION'
         },
         {
-            pattern: /(WTG.Type\s*:)|(Type\s+WTG\s*:)/i,
+            pattern: /(WTG.Type\s*:)/i,
             field: 'WTG_TYPE'
         },
         {
-            pattern: /(Scope\s*:)|(Champ\s*d\s*.\s*application\s*:)/i,
+            pattern: /(Scope\s*:)/i,
             field: 'SCOPE'
         },
         {
-            pattern: /(Customer\s*:)|(Client\s*:)/i,
+            pattern: /(Customer\s*:)/i,
             field: 'CUSTOMER'
         },
         {
-            pattern: /(Report\s*name\s*:)|(Nom\s*du\s*rapport\s*:)/i,
+            pattern: /(Report\s*name\s*:)/i,
             field: 'REPORT_NAME'
         },
         {
-            pattern: /(Project\s*Engineer\s*:)|(Ing[ée]nieur\s*de\s*projet\s*:)/i,
+            pattern: /(Project\s*Engineer\s*:)/i,
             field: 'PROJECT_ENGINEER',
         },
         {
@@ -97,7 +97,7 @@ const extractInfoTurbine = (data) => {
             field: 'SUBCONTRACTOR',
         },
         {
-            pattern: /(Object\s*:)|(Objet\s*:)/i,
+            pattern: /(Object\s*:)/i,
             field: 'OBJECT',
             multiline: true
         },
@@ -113,7 +113,6 @@ const extractInfoTurbine = (data) => {
             const matches = pText.match(pattern.pattern);
             if (matches && !results[pattern.field]) {
                 results[pattern.field] = pText.replace(pattern.pattern, '').trim();
-                if (pattern.field == 'REPORT_NAME') console.log('REPORT_NAME', results[pattern.field], pText.replace(pattern.pattern, '').trim())
             }
         }
     }
@@ -138,27 +137,27 @@ const extractProductionData = (index, data) => {
     };
     const PATTERNS = [
         {
-            pattern: /(Nominal\s*power|Puissance\s*Nominale)\s*:/i,
+            pattern: /(Nominal\s*power)\s*:/i,
             field: 'MINIMAL_POWER'
         },
         {
-            pattern: /(Hub\s*height|Hauteur\s*du\s*moyeu)\s*:/i,
+            pattern: /(Hub\s*height)\s*:/i,
             field: 'HUB_HEIGHT'
         },
         {
-            pattern: /(Rotor\s*diameter|Diam[ée]tre\s*du\s*rotor)\s*:/i,
+            pattern: /(Rotor\s*diameter)\s*:/i,
             field: 'ROTOR_DIAMETER'
         },
         {
-            pattern: /(Maximum\s*power|Puissance\s*Maximale)\s*:/i,
+            pattern: /(Maximum\s*power)\s*:/i,
             field: 'MAX_POWER'
         },
         {
-            pattern: /(Date\s*of\s*commissioning|Date\s*de\s*mise\s*en\s*service)\s*:/i,
+            pattern: /(Date\s*of\s*commissioning)\s*:/i,
             field: 'DATE_COMMISSIONING'
         },
         {
-            pattern: /(Hours\s*of\s*operation|Heures\s*de\s*fonctionnement)\s*:/i,
+            pattern: /(Hours\s*of\s*operation)\s*:/i,
             field: 'HOUR_OPERATION'
         },
         {
@@ -166,7 +165,7 @@ const extractProductionData = (index, data) => {
             field: 'CONSUMPTION'
         },
         {
-            pattern: /(Produced\s*energy|Energie\s*produite)\s*:/i,
+            pattern: /(Produced\s*energy)\s*:/i,
             field: 'ENERGY_PRODUCTION'
         }
     ];
