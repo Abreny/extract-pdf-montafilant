@@ -78,7 +78,8 @@ const extractInfoTurbine = (data) => {
         },
         {
             pattern: /(Scope\s*:)|(Champ\s*d\s*.\s*application\s*:)/i,
-            field: 'SCOPE'
+            field: 'SCOPE',
+            multiline: true
         },
         {
             pattern: /(Customer\s*:)|(Client\s*:)/i,
@@ -113,6 +114,13 @@ const extractInfoTurbine = (data) => {
             const matches = pText.match(pattern.pattern);
             if (matches && !results[pattern.field]) {
                 results[pattern.field] = pText.replace(pattern.pattern, '').trim();
+                if (pattern.multiline) {
+                    let j = i + 1;
+                    while(j < data.length && data[j].indexOf(':') < 0 && !pageBreak.test(data[j])) {
+                        results[pattern.field] = `${results[pattern.field]} ${data[j].trim()}`;
+                        j++;
+                    }
+                }
             }
         }
     }
@@ -193,7 +201,7 @@ const extractExpertiseDetails = (index, data) => {
     };
     const EXPERTISE_DETAILS = /^D.[0-9]*\s*(.*)$/;
     const BREAK = /(^D\s*\.\s*[0-9]*)|(^E\s*\.\s*[0-9]*)/;
-    const LINE_HEADER = /^\s*([0-9]+)\s*(I|E|V|P|PP|PPP)/;
+    const LINE_HEADER = /^\s*([0-9]+)\s*(I|E|V|P\s+|PP\s+|PPP)/;
     const PAGE_BREAK = /^page\s*[0-9]+|page\s*[0-9]+$/i;
     const QUOTES = /"/g;
     let matches = data[index].match(EXPERTISE_DETAILS);
@@ -208,17 +216,19 @@ const extractExpertiseDetails = (index, data) => {
             if (matches) {
                 const elem = {};
                 elem.ID = matches[1];
-                elem.CRITICITY = matches[2];
+                elem.CRITICITY = matches[2].trim();
                 elem.TEXT = text.replace(LINE_HEADER, '').trim();
                 elem.COMMENT = '';
+                let alreadyComment = false;
                 while(++i < data.length) {
                     text = data[i].replace(QUOTES, '');
-                    if (PAGE_BREAK.test(text) || LINE_HEADER.test(text)) {
+                    if (PAGE_BREAK.test(text) || BREAK.test(text) || LINE_HEADER.test(text)) {
                         i--;
                         break;
                     }
-                    if (/^\s*-\s*/.test(text)) {
-                        elem.COMMENT = `${elem.COMMENT}\n${text}`;
+                    if (/^\s*-\s*/.test(text) || alreadyComment) {
+                        alreadyComment = true;
+                        elem.COMMENT = `${elem.COMMENT} ${text}`;
                     } else {
                         elem.TEXT = `${elem.TEXT} ${text}`;
                     }
@@ -262,6 +272,7 @@ const extractConclusion = (index, data) => {
                 elem.TITLE = matches[1].trim();
                 elem.TEXT = '';
                 elem.COMMENT = '';
+                let alreadyComment = false;
                 next_conclusion: while(++i < data.length) {
                     text = data[i].replace(QUOTES, '');
                     if (PAGE_BREAK.test(text)) {
@@ -276,8 +287,9 @@ const extractConclusion = (index, data) => {
                         i--;
                         break;
                     }
-                    if (/^\s*-\s*/.test(text)) {
-                        elem.COMMENT = `${elem.COMMENT}\n${text}`
+                    if (/^\s*-\s*/.test(text) || alreadyComment) {
+                        alreadyComment = true;
+                        elem.COMMENT = `${elem.COMMENT} ${text}`
                     } else {
                         elem.TEXT = `${elem.TEXT} ${text}`;
                     }
