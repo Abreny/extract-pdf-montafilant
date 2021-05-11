@@ -20,7 +20,7 @@ const saveTurbine = (data) => {
 const saveExpertise = (data) => {
     const ws = wb.getWorksheet(config.EXCELS.TABLE.EXPERTISE);
     ws.addRow([
-        data.INFO_TURBINE.REFERENCE,
+        `${data.INFO_TURBINE.REPORT_NAME}, ${data.INFO_TURBINE.DATE_OF_EXPERTISE}`,
         data.INFO_TURBINE.NUM_SERIE,
         data.INFO_TURBINE.OBJECT,
         data.INFO_TURBINE.SCOPE,
@@ -49,7 +49,7 @@ const saveComponent = (data) => {
                 rows[1],
                 rows[2],
                 rows[3],
-                data.INFO_TURBINE.REFERENCE
+                `${data.INFO_TURBINE.REPORT_NAME}, ${data.INFO_TURBINE.DATE_OF_EXPERTISE}`
             ]);
         }
     }
@@ -66,7 +66,7 @@ const saveRemark = (data) => {
                 rows.CRITICITY,
                 rows.TEXT,
                 rows.COMMENT,
-                data.INFO_TURBINE.REFERENCE
+                `${data.INFO_TURBINE.REPORT_NAME}, ${data.INFO_TURBINE.DATE_OF_EXPERTISE}`
             ]);
         }
     }
@@ -82,7 +82,7 @@ const saveConclusion = (data) => {
                 rows.TITLE,
                 rows.TEXT,
                 rows.COMMENT,
-                data.INFO_TURBINE.REFERENCE
+                `${data.INFO_TURBINE.REPORT_NAME}, ${data.INFO_TURBINE.DATE_OF_EXPERTISE}`
             ]);
         }
     }

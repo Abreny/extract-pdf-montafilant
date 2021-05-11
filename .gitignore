@@ -1,4 +1,5 @@
 node_modules
 pdf*/
+yarn.lock
 log-*
 exportation-result.xlsx

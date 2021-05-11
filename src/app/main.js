@@ -73,24 +73,24 @@ const extractInfoTurbine = (data) => {
             field: 'DATE_VALIDATION'
         },
         {
-            pattern: /(WTG.Type\s*:)|(Type\s+WTG\s*:)/i,
+            pattern: /(WTG.Type\s*:)/i,
             field: 'WTG_TYPE'
         },
         {
-            pattern: /(Scope\s*:)|(Champ\s*d\s*.\s*application\s*:)/i,
+            pattern: /(Scope\s*:)/i,
             field: 'SCOPE',
             multiline: true
         },
         {
-            pattern: /(Customer\s*:)|(Client\s*:)/i,
+            pattern: /(Customer\s*:)/i,
             field: 'CUSTOMER'
         },
         {
-            pattern: /(Report\s*name:\s*:)|(Nom\s*du\s*rapport\s*:)/i,
+            pattern: /(Report\s*name\s*:)/i,
             field: 'REPORT_NAME'
         },
         {
-            pattern: /(Project\s*Engineer\s*:)|(Ing[ée]nieur\s*de\s*projet\s*:)/i,
+            pattern: /(Project\s*Engineer\s*:)/i,
             field: 'PROJECT_ENGINEER',
         },
         {
@@ -98,7 +98,7 @@ const extractInfoTurbine = (data) => {
             field: 'SUBCONTRACTOR',
         },
         {
-            pattern: /(Object\s*:)|(Objet\s*:)/i,
+            pattern: /(Object\s*:)/i,
             field: 'OBJECT',
             multiline: true
         },
@@ -145,27 +145,27 @@ const extractProductionData = (index, data) => {
     };
     const PATTERNS = [
         {
-            pattern: /(Nominal\s*power|Puissance\s*Nominale)\s*:/i,
+            pattern: /(Nominal\s*power)\s*:/i,
             field: 'MINIMAL_POWER'
         },
         {
-            pattern: /(Hub\s*height|Hauteur\s*du\s*moyeu)\s*:/i,
+            pattern: /(Hub\s*height)\s*:/i,
             field: 'HUB_HEIGHT'
         },
         {
-            pattern: /(Rotor\s*diameter|Diam[ée]tre\s*du\s*rotor)\s*:/i,
+            pattern: /(Rotor\s*diameter)\s*:/i,
             field: 'ROTOR_DIAMETER'
         },
         {
-            pattern: /(Maximum\s*power|Puissance\s*Maximale)\s*:/i,
+            pattern: /(Maximum\s*power)\s*:/i,
             field: 'MAX_POWER'
         },
         {
-            pattern: /(Date\s*of\s*commissioning|Date\s*de\s*mise\s*en\s*service)\s*:/i,
+            pattern: /(Date\s*of\s*commissioning)\s*:/i,
             field: 'DATE_COMMISSIONING'
         },
         {
-            pattern: /(Hours\s*of\s*operation|Heures\s*de\s*fonctionnement)\s*:/i,
+            pattern: /(Hours\s*of\s*operation)\s*:/i,
             field: 'HOUR_OPERATION'
         },
         {
@@ -173,7 +173,7 @@ const extractProductionData = (index, data) => {
             field: 'CONSUMPTION'
         },
         {
-            pattern: /(Produced\s*energy|Energie\s*produite)\s*:/i,
+            pattern: /(Produced\s*energy)\s*:/i,
             field: 'ENERGY_PRODUCTION'
         }
     ];
@@ -433,8 +433,8 @@ const getPdfData = (isTurbine, filename, stdout) => {
 const tabulaHandler = (cmd, filename) => {
     return new Promise((resolve, reject) => {
         const cmds = {
-            turbine: `java -jar "${config.TAPULA_PATH}" --pages all -c 10000 "${filename}"`,
-            component: `java -jar "${config.TAPULA_PATH}" --pages all --columns 200,320,440,1000 "${filename}"`
+            turbine: `java -Dfile.encoding=utf-8 -Xms256M -Xmx1024M -jar "${config.TAPULA_PATH}" --pages all -c 10000 "${filename}"`,
+            component: `java -Dfile.encoding=utf-8 -Xms256M -Xmx1024M -jar "${config.TAPULA_PATH}" --pages all --columns 200,320,440,1000 "${filename}"`
         };
         exec(cmds[cmd], (err, stdout, stderr) => {
             if (err) {
