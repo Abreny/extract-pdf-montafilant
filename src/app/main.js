@@ -91,11 +91,12 @@ const extractInfoTurbine = (data) => {
         },
         {
             pattern: /(Project\s*Engineer\s*:)/i,
-            field: 'PROJECT_ENGINEER',
+            field: 'PROJECT_ENGINEER'
         },
         {
             pattern: /(Subcontractor\s*:)/i,
             field: 'SUBCONTRACTOR',
+            multiline: true
         },
         {
             pattern: /(Object\s*:)/i,
@@ -103,6 +104,7 @@ const extractInfoTurbine = (data) => {
             multiline: true
         },
     ];
+    const QUOTES = /^"|"$/g;
 
     for(let i = 0; i < data.length; i++) {
         const pText = data[i];
@@ -113,11 +115,11 @@ const extractInfoTurbine = (data) => {
             const pattern = PATTERNS[pi];
             const matches = pText.match(pattern.pattern);
             if (matches && !results[pattern.field]) {
-                results[pattern.field] = pText.replace(pattern.pattern, '').trim();
+                results[pattern.field] = pText.replace(pattern.pattern, '').replace(QUOTES, '').trim();
                 if (pattern.multiline) {
                     let j = i + 1;
                     while(j < data.length && data[j].indexOf(':') < 0 && !pageBreak.test(data[j])) {
-                        results[pattern.field] = `${results[pattern.field]} ${data[j].trim()}`;
+                        results[pattern.field] = `${results[pattern.field]} ${data[j].replace(QUOTES, '').trim()}`;
                         j++;
                     }
                 }
@@ -173,7 +175,7 @@ const extractProductionData = (index, data) => {
             field: 'CONSUMPTION'
         },
         {
-            pattern: /(Produced\s*energy)\s*:/i,
+            pattern: /Produced\s*energy\s*(?:\(.*\))?\s*:/i,
             field: 'ENERGY_PRODUCTION'
         }
     ];
@@ -203,8 +205,8 @@ const extractExpertiseDetails = (index, data) => {
     const BREAK = /(^D\s*\.\s*[0-9]*)|(^E\s*\.\s*[0-9]*)/;
     const LINE_HEADER = /^\s*([0-9]+)\s*(I|E|V|P\s+|PP\s+|PPP)/;
     const PAGE_BREAK = /^page\s*[0-9]+|page\s*[0-9]+$/i;
-    const QUOTES = /"/g;
-    let matches = data[index].match(EXPERTISE_DETAILS);
+    const QUOTES = /^"|"$/g;
+    let matches = data[index].replace(QUOTES, '').trim().match(EXPERTISE_DETAILS);
     if (matches) {
         results.TITLE = matches[1];
         for(let i = index + 1; i < data.length; i++) {
@@ -253,7 +255,7 @@ const extractConclusion = (index, data) => {
     const CONSLUSION_PATTERN = /^E.[0-9]*\s*(.*)$/;
     const BREAK = /(^E\s*\.\s*[0-9]*)|(^F\s*\.\s*[0-9]*)/;
     const PAGE_BREAK = /^page\s*[0-9]+|page\s*[0-9]+$/i;
-    const PAGE_END = /^Edit\s*[0-9]+/i;
+    const PAGE_END = /^(Edit|publi.*)\s*[0-9]+/i;
     const QUOTES = /"/g;
     const DOT = /(.*):\s*$/;
     let matches = data[index].match(CONSLUSION_PATTERN);
@@ -314,6 +316,8 @@ const extractComponents = (index, data) => {
     const CONSLUSION_PATTERN = /^B.[0-9]+\s*(.*)$/;
     const BREAK = /(^C\s*\.\s*[0-9]*)|(^B\s*\.\s*[0-9]*)/;
     const PAGE_BREAK = /^page\s*[0-9]+|page\s*[0-9]+$/i;
+    const PAGE_END = /^(Edit|publi.*)\s*[0-9]+/i;
+    const QUOTES = /"|,/g;
     let matches = data[index].match(CONSLUSION_PATTERN);
     const extractLine = (line) => {
         const chars = line.split('');
@@ -332,7 +336,7 @@ const extractComponents = (index, data) => {
                     lineData.code = 0;
                     return lineData;
                 }
-                if (PAGE_BREAK.test(col) || BREAK.test(col)) {
+                if (BREAK.test(col)) {
                     lineData.code = -1;
                     return lineData;
                 }
@@ -346,7 +350,7 @@ const extractComponents = (index, data) => {
             }
         }
         const lastCol = curr.join('').trim();
-        if (PAGE_BREAK.test(lastCol) || BREAK.test(lastCol)) {
+        if (BREAK.test(lastCol)) {
             lineData.code = -1;
             return lineData;
         }
@@ -356,7 +360,18 @@ const extractComponents = (index, data) => {
     if (matches) {
         results.TITLE = matches[1].replace(/,/g, '').trim();
         let len = 0;
-        for(let i = index + 1; i < data.length; i++) {
+        next_conclusion: for(let i = index + 1; i < data.length; i++) {
+            if (PAGE_BREAK.test(data[i].replace(QUOTES, '').trim())) {
+                while(++i < data.length) {
+                    const lineText = data[i].replace(QUOTES, '').trim();
+                    if (PAGE_END.test(lineText)) {
+                        continue next_conclusion;
+                    }
+                }
+            }
+            if (i >= data.length) {
+                break;
+            }
             const lineData = extractLine(data[i]);
             if (lineData.code == -1) {
                 break;
@@ -398,9 +413,10 @@ const getPdfData = (isTurbine, filename, stdout) => {
     const EXPERTISE_DETAILS = /^D\s*.\s*[0-9]+/;
     const CONCLUSION_DETAILS = /^E\s*.\s*[0-9]+\s*Conclusion/;
     const MAIN_COMPONENTS = /^B.[2-3]\s*/;
+    const QUOTES = /^"|"$/g;
     
     for(let i = 0; i < lines.length; i++) {
-        const text = lines[i];
+        const text = lines[i].replace(QUOTES, '').trim();
         if (isTurbine) {
             if (PRODUCTION_DATA_PATTERN.test(text)) {
                 PDF_DATA.PRODUCTION_DATA = extractProductionData(i, lines);
@@ -434,7 +450,7 @@ const tabulaHandler = (cmd, filename) => {
     return new Promise((resolve, reject) => {
         const cmds = {
             turbine: `java -Dfile.encoding=utf-8 -Xms256M -Xmx1024M -jar "${config.TAPULA_PATH}" --pages all -c 10000 "${filename}"`,
-            component: `java -Dfile.encoding=utf-8 -Xms256M -Xmx1024M -jar "${config.TAPULA_PATH}" --pages all --columns 200,320,440,1000 "${filename}"`
+            component: `java -Dfile.encoding=utf-8 -Xms256M -Xmx1024M -jar "${config.TAPULA_PATH}" --pages all --columns 200,320,442,1000 "${filename}"`
         };
         exec(cmds[cmd], (err, stdout, stderr) => {
             if (err) {
@@ -460,7 +476,9 @@ const main = async () => {
                 await dataWriter.save(data);
             }
         }
-        setTimeout(() => {}, 2000);
+        setTimeout(() => {
+            //
+        }, 2000);
     }
 }
 
