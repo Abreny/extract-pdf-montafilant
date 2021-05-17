@@ -400,7 +400,7 @@ const extractComponentsV2 = (index, data) => {
     const BREAK = /(^C\s*\.\s*[0-9]*)|(^B\s*\.\s*[0-9]*)/;
     const PAGE_BREAK = /^page\s*[0-9]+|page\s*[0-9]+$/i;
     const PAGE_END = /^(Edit|publi.*)\s*[0-9]+/i;
-    const QUOTES = /"|,/g;
+    const QUOTES = /^"|"$/g;
     let matches = data[index].match(CONSLUSION_PATTERN);
     if (matches) {
         results.TITLE = matches[1].replace(/,/g, '').trim();
