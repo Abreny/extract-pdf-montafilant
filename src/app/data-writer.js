@@ -47,8 +47,8 @@ const saveComponent = (data) => {
             ws.addRow([
                 rows[0],
                 rows[1],
-                rows[2],
-                rows[3],
+                rows[2] || '',
+                rows[3] || '',
                 `${data.INFO_TURBINE.REPORT_NAME}, ${data.INFO_TURBINE.DATE_OF_EXPERTISE}`
             ]);
         }
