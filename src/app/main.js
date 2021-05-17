@@ -360,12 +360,12 @@ const extractComponents = (index, data) => {
     if (matches) {
         results.TITLE = matches[1].replace(/,/g, '').trim();
         let len = 0;
-        next_conclusion: for(let i = index + 1; i < data.length; i++) {
+        next_component: for(let i = index + 1; i < data.length; i++) {
             if (PAGE_BREAK.test(data[i].replace(QUOTES, '').trim())) {
                 while(++i < data.length) {
                     const lineText = data[i].replace(QUOTES, '').trim();
                     if (PAGE_END.test(lineText)) {
-                        continue next_conclusion;
+                        continue next_component;
                     }
                 }
             }
@@ -383,6 +383,51 @@ const extractComponents = (index, data) => {
                     results.DATA[len - 1][line_i] = `${results.DATA[len - 1][line_i]} ${lineData.data[line_i]}`;
                     results.DATA[len - 1][line_i] = results.DATA[len - 1][line_i].trim();
                 }
+            }
+        }
+    }
+    if (results.DATA.length < 1) {
+        return false;
+    }
+    return results;
+};
+const extractComponentsV2 = (index, data) => {
+    const results = {
+        TITLE: '',
+        DATA: []
+    };
+    const CONSLUSION_PATTERN = /^B.[0-9]+\s*(.*)$/;
+    const BREAK = /(^C\s*\.\s*[0-9]*)|(^B\s*\.\s*[0-9]*)/;
+    const PAGE_BREAK = /^page\s*[0-9]+|page\s*[0-9]+$/i;
+    const PAGE_END = /^(Edit|publi.*)\s*[0-9]+/i;
+    const QUOTES = /"|,/g;
+    let matches = data[index].match(CONSLUSION_PATTERN);
+    if (matches) {
+        results.TITLE = matches[1].replace(/,/g, '').trim();
+        results.IS_V2 = true;
+
+        next_component: for(let i = index + 1; i < data.length && results.IS_V2; i++) {
+            const text = data[i].replace(QUOTES, '').trim();
+            if (PAGE_BREAK.test(text)) {
+                while(++i < data.length) {
+                    const lineText = data[i].replace(QUOTES, '').trim();
+                    if (PAGE_END.test(lineText)) {
+                        continue next_component;
+                    }
+                }
+            }
+            if (i >= data.length) {
+                break;
+            }
+            if (BREAK.test(text)) {
+                break;
+            }
+            if (/^(component|composant)/i.test(text)) {
+                results.IS_V2 = false;
+            }
+            const elems = text.split(/\s+-\s+/);
+            if (elems.length >= 2) {
+                results.DATA.push(elems);
             }
         }
     }
@@ -436,6 +481,13 @@ const getPdfData = (isTurbine, filename, stdout) => {
                     PDF_DATA.IS_SCAN = false;
                 }
             }
+            if (MAIN_COMPONENTS.test(text)) {
+                const components = extractComponentsV2(i, lines);
+                if (components) {
+                    PDF_DATA.COMPONENT.push(components);
+                    PDF_DATA.IS_V2 = PDF_DATA.IS_V2 || components.IS_V2;
+                }
+            }
         } else if (MAIN_COMPONENTS.test(text.replace(/,/g, '').trim())) {
             const components = extractComponents(i, lines);
             if (components) {
@@ -468,8 +520,10 @@ const main = async () => {
         if (file.match(EXTENSION)) {
             console.log(`****** ${file} ******`);
             const data =  await tabulaHandler('turbine', getPath(file));
-            const data2 = await tabulaHandler('component', getPath(file));
-            data.COMPONENT = data2.COMPONENT;
+            if (!data.IS_V2) {
+                const data2 = await tabulaHandler('component', getPath(file));
+                data.COMPONENT = data2.COMPONENT;
+            }
             if (data.IS_SCAN) {
                 console.log(`${file}: FORMAT NON RECONNU`);
             } else {
